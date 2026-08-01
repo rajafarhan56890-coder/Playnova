@@ -14,29 +14,87 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import java.util.Date
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.domain.Transaction
+import com.example.ui.viewmodels.AdminConfig
+import com.example.ui.viewmodels.WalletState
+import com.example.ui.viewmodels.WalletViewModel
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @Composable
-fun WalletScreen() {
+fun WalletScreen(walletViewModel: WalletViewModel = viewModel()) {
+    val walletState by walletViewModel.walletState.collectAsState()
+    val withdrawMessage by walletViewModel.withdrawState.collectAsState()
+    var showWithdrawDialog by remember { mutableStateOf(false) }
+    var showMessageDialog by remember { mutableStateOf(false) }
+    var messageDialogText by remember { mutableStateOf("") }
+
+    LaunchedEffect(withdrawMessage) {
+        if (withdrawMessage != null) {
+            messageDialogText = withdrawMessage!!
+            showMessageDialog = true
+            showWithdrawDialog = false
+            walletViewModel.clearWithdrawState()
+        }
+    }
+
+    if (showMessageDialog) {
+        AlertDialog(
+            onDismissRequest = { showMessageDialog = false },
+            title = { Text("Notice") },
+            text = { Text(messageDialogText) },
+            confirmButton = {
+                TextButton(onClick = { showMessageDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (showWithdrawDialog) {
+        WithdrawDialog(
+            onDismiss = { showWithdrawDialog = false },
+            onSubmit = { amount, method, details ->
+                walletViewModel.requestWithdrawal(amount, method, details)
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -50,7 +108,23 @@ fun WalletScreen() {
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(16.dp))
-            WalletBalanceCard()
+            
+            when (val state = walletState) {
+                is WalletState.Loading -> {
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is WalletState.Error -> {
+                    Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
+                }
+                is WalletState.Success -> {
+                    WalletBalanceCard(state.balance, state.config) {
+                        showWithdrawDialog = true
+                    }
+                }
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Recent Transactions",
@@ -60,28 +134,37 @@ fun WalletScreen() {
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        val mockTransactions = listOf(
-            Triple("Reward: Galaxy Shooter", "+50", true),
-            Triple("Daily Login Reward", "+50", true),
-            Triple("Withdrawal to PayPal", "-500", false),
-            Triple("Referral Bonus", "+500", true),
-            Triple("Reward: Tower Defense", "+100", true)
-        )
-
-        items(mockTransactions.size) { index ->
-            val (title, amount, isPositive) = mockTransactions[index]
-            TransactionItemDetailed(
-                title = title,
-                amount = amount,
-                isPositive = isPositive,
-                date = Date(System.currentTimeMillis() - (index * 86400000L)) // mock dates
-            )
+        if (walletState is WalletState.Success) {
+            val transactions = (walletState as WalletState.Success).transactions
+            if (transactions.isEmpty()) {
+                item {
+                    Text(
+                        "No transactions yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            } else {
+                items(transactions.size) { index ->
+                    val transaction = transactions[index]
+                    TransactionItemDetailed(
+                        title = transaction.title,
+                        amount = if (transaction.isPositive) "+${transaction.amount}" else "-${transaction.amount}",
+                        isPositive = transaction.isPositive,
+                        date = transaction.timestamp,
+                        status = transaction.status
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun WalletBalanceCard() {
+fun WalletBalanceCard(balance: Long, config: AdminConfig, onWithdrawClick: () -> Unit) {
+    val usdValue = String.format(Locale.US, "%.2f", balance * config.conversionRateUSD)
+    val pkrValue = String.format(Locale.US, "%.2f", balance * config.conversionRatePKR)
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -99,20 +182,20 @@ fun WalletBalanceCard() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "12,450 Nova",
+                text = "$balance Nova",
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "≈ $12.45 USD",
+                text = "≈ $usdValue USD / $pkrValue PKR",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
-                    onClick = { /* Handle Withdraw */ },
+                    onClick = onWithdrawClick,
                     modifier = Modifier.weight(1f).height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary)
                 ) {
@@ -129,8 +212,86 @@ fun WalletBalanceCard() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionItemDetailed(title: String, amount: String, isPositive: Boolean, date: Date) {
+fun WithdrawDialog(onDismiss: () -> Unit, onSubmit: (Long, String, String) -> Unit) {
+    var amountStr by remember { mutableStateOf("") }
+    var accountDetails by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedMethod by remember { mutableStateOf("EasyPaisa") }
+    val methods = listOf("EasyPaisa", "JazzCash")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Request Withdrawal") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = amountStr,
+                    onValueChange = { amountStr = it },
+                    label = { Text("Amount (Nova)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedMethod,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Payment Method") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        methods.forEach { method ->
+                            DropdownMenuItem(
+                                text = { Text(method) },
+                                onClick = {
+                                    selectedMethod = method
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = accountDetails,
+                    onValueChange = { accountDetails = it },
+                    label = { Text("Account Number / Details") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val amount = amountStr.toLongOrNull() ?: 0L
+                onSubmit(amount, selectedMethod, accountDetails)
+            }) {
+                Text("Submit")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun TransactionItemDetailed(title: String, amount: String, isPositive: Boolean, date: Date, status: String) {
     val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     Row(
         modifier = Modifier
@@ -167,7 +328,7 @@ fun TransactionItemDetailed(title: String, amount: String, isPositive: Boolean, 
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = formatter.format(date),
+                    text = "${formatter.format(date)} • ${status.capitalize()}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -180,3 +341,4 @@ fun TransactionItemDetailed(title: String, amount: String, isPositive: Boolean, 
         )
     }
 }
+

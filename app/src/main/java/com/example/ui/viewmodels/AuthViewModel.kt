@@ -36,7 +36,7 @@ class AuthViewModel : ViewModel() {
                 uid = "mock123",
                 email = "playerone@example.com",
                 username = "PlayerOne",
-                balance = 12450,
+                balance = 0,
                 level = 12,
                 rank = "Gold Elite",
                 referralCode = "NOVA-X79B"
@@ -81,7 +81,7 @@ class AuthViewModel : ViewModel() {
                     uid = uid,
                     email = email,
                     username = email.substringBefore("@"),
-                    balance = 100, // Welcome bonus
+                    balance = 0, // No welcome bonus
                     level = 1,
                     rank = "Bronze",
                     referralCode = generateReferralCode()

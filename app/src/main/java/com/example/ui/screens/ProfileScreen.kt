@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,10 @@ import com.example.ui.viewmodels.AuthState
 import com.example.ui.viewmodels.AuthViewModel
 
 @Composable
-fun ProfileScreen(authViewModel: AuthViewModel = viewModel()) {
+fun ProfileScreen(
+    authViewModel: AuthViewModel = viewModel(),
+    onNavigateToAdminGames: () -> Unit = {}
+) {
     val authState by authViewModel.authState.collectAsState()
     val user = (authState as? AuthState.Success)?.user
 
@@ -178,6 +182,12 @@ fun ProfileScreen(authViewModel: AuthViewModel = viewModel()) {
             SettingsItem(icon = Icons.Default.Notifications, title = "Notifications")
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
             SettingsItem(icon = Icons.Default.Security, title = "Security & Firebase Integration")
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            SettingsItem(
+                icon = Icons.Default.Star, 
+                title = "Manage Games (Admin)",
+                onClick = onNavigateToAdminGames
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -197,10 +207,11 @@ fun ProfileScreen(authViewModel: AuthViewModel = viewModel()) {
 }
 
 @Composable
-fun SettingsItem(icon: ImageVector, title: String) {
+fun SettingsItem(icon: ImageVector, title: String, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

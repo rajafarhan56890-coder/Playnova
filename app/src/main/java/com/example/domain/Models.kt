@@ -14,37 +14,50 @@ data class UserProfile(
 )
 
 data class Game(
-    val id: String,
-    val title: String,
-    val description: String,
-    val category: String,
-    val rewardPoints: Int,
-    val imageUrl: String? = null
+    val id: String = "",
+    val title: String = "",
+    val description: String = "",
+    val category: String = "",
+    val rewardPoints: Int = 0,
+    val imageUrl: String? = null,
+    val gameUrl: String? = null,
+    val isActive: Boolean = true
 )
 
 data class Transaction(
-    val id: String,
-    val title: String,
-    val amount: Long,
-    val isPositive: Boolean,
-    val timestamp: Date,
-    val type: String // "reward", "withdrawal", "referral"
+    val id: String = "",
+    val title: String = "",
+    val amount: Long = 0,
+    val isPositive: Boolean = true,
+    val timestamp: Date = Date(),
+    val type: String = "", // "reward", "withdrawal", "referral"
+    val status: String = "completed"
 )
 
 data class Notification(
-    val id: String,
-    val title: String,
-    val message: String,
-    val timestamp: Date,
-    val isRead: Boolean,
-    val type: String // "system", "reward", "announcement"
+    val id: String = "",
+    val title: String = "",
+    val message: String = "",
+    val timestamp: Date = Date(),
+    val isRead: Boolean = false,
+    val type: String = "" // "system", "reward", "announcement"
 )
 
 data class RewardTask(
-    val id: String,
-    val title: String,
-    val description: String,
-    val rewardAmount: Int,
-    val isCompleted: Boolean,
+    val id: String = "",
+    val title: String = "",
+    val description: String = "",
+    val rewardAmount: Int = 0,
+    val isCompleted: Boolean = false,
     val progress: Float = 0f // 0.0 to 1.0
+)
+
+data class WithdrawalRequest(
+    val id: String = "",
+    val userId: String = "",
+    val amount: Long = 0,
+    val paymentMethod: String = "", // EasyPaisa, JazzCash
+    val accountDetails: String = "",
+    val status: String = "pending", // pending, approved, rejected
+    val timestamp: Date = Date()
 )

@@ -37,11 +37,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ui.viewmodels.AuthState
+import com.example.ui.viewmodels.AuthViewModel
 import com.example.ui.viewmodels.DailyRewardState
 import com.example.ui.viewmodels.DailyRewardViewModel
 
 @Composable
-fun HomeScreen(onNavigateToNotifications: () -> Unit = {}) {
+fun HomeScreen(
+    onNavigateToNotifications: () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel()
+) {
+    val authState by authViewModel.authState.collectAsState()
+    val user = (authState as? AuthState.Success)?.user
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -50,10 +58,10 @@ fun HomeScreen(onNavigateToNotifications: () -> Unit = {}) {
     ) {
         item {
             Spacer(modifier = Modifier.height(24.dp))
-            HeaderSection(onNavigateToNotifications)
+            HeaderSection(user?.username ?: "PlayerOne", onNavigateToNotifications)
         }
         item {
-            BalanceCard()
+            BalanceCard(user?.balance ?: 0)
         }
         item {
             DailyRewardCard()
@@ -89,7 +97,7 @@ fun HomeScreen(onNavigateToNotifications: () -> Unit = {}) {
 }
 
 @Composable
-fun HeaderSection(onNavigateToNotifications: () -> Unit) {
+fun HeaderSection(username: String, onNavigateToNotifications: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -102,7 +110,7 @@ fun HeaderSection(onNavigateToNotifications: () -> Unit) {
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
             Text(
-                text = "PlayerOne",
+                text = username,
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -131,7 +139,7 @@ fun HeaderSection(onNavigateToNotifications: () -> Unit) {
 
 
 @Composable
-fun BalanceCard() {
+fun BalanceCard(balance: Long) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -153,7 +161,7 @@ fun BalanceCard() {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "12,450",
+                    text = "$balance",
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground
                 )
