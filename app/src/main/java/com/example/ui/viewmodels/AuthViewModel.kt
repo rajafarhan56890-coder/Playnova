@@ -100,18 +100,21 @@ class AuthViewModel : ViewModel() {
     }
 
     private fun fetchUserProfile(uid: String) {
-        viewModelScope.launch {
-            try {
-                val snapshot = db?.collection("users")?.document(uid)?.get()?.await()
+        try {
+            db?.collection("users")?.document(uid)?.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    _authState.value = AuthState.Error(error.message ?: "Failed to fetch profile")
+                    return@addSnapshotListener
+                }
                 val user = snapshot?.toObject(UserProfile::class.java)
                 if (user != null) {
                     _authState.value = AuthState.Success(user)
                 } else {
                     _authState.value = AuthState.Error("User profile not found")
                 }
-            } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "Failed to fetch profile")
             }
+        } catch (e: Exception) {
+            _authState.value = AuthState.Error(e.message ?: "Failed to fetch profile")
         }
     }
 

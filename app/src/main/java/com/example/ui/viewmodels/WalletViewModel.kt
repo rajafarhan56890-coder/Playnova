@@ -53,34 +53,43 @@ class WalletViewModel : ViewModel() {
             return
         }
 
-        viewModelScope.launch {
-            try {
-                _walletState.value = WalletState.Loading
+        try {
+            _walletState.value = WalletState.Loading
+            
+            db?.collection("users")?.document(uid)?.addSnapshotListener { userSnapshot, userError ->
+                if (userError != null) {
+                    _walletState.value = WalletState.Error(userError.message ?: "Failed to load wallet")
+                    return@addSnapshotListener
+                }
                 
-                // Fetch user balance
-                val userDoc = db?.collection("users")?.document(uid)?.get()?.await()
-                val balance = userDoc?.getLong("balance") ?: 0L
+                val balance = userSnapshot?.getLong("balance") ?: 0L
+                
+                viewModelScope.launch {
+                    try {
+                        // Fetch transactions
+                        val transactionsSnapshot = db.collection("users").document(uid)
+                            .collection("transactions")
+                            .orderBy("timestamp", Query.Direction.DESCENDING)
+                            .limit(20)
+                            .get().await()
 
-                // Fetch transactions
-                val transactionsSnapshot = db?.collection("users")?.document(uid)
-                    ?.collection("transactions")
-                    ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                    ?.limit(20)
-                    ?.get()?.await()
+                        val transactions = transactionsSnapshot?.documents?.mapNotNull {
+                            it.toObject(Transaction::class.java)?.copy(id = it.id)
+                        } ?: emptyList()
 
-                val transactions = transactionsSnapshot?.documents?.mapNotNull {
-                    it.toObject(Transaction::class.java)?.copy(id = it.id)
-                } ?: emptyList()
+                        // Fetch admin config
+                        val configDoc = db.collection("admin").document("config").get().await()
+                        val config = configDoc?.toObject(AdminConfig::class.java) ?: AdminConfig()
 
-                // Fetch admin config
-                val configDoc = db?.collection("admin")?.document("config")?.get()?.await()
-                val config = configDoc?.toObject(AdminConfig::class.java) ?: AdminConfig()
-
-                _walletState.value = WalletState.Success(balance, transactions, config)
-
-            } catch (e: Exception) {
-                _walletState.value = WalletState.Error(e.message ?: "Failed to load wallet")
+                        _walletState.value = WalletState.Success(balance, transactions, config)
+                    } catch (e: Exception) {
+                        _walletState.value = WalletState.Error(e.message ?: "Failed to load wallet data")
+                    }
+                }
             }
+
+        } catch (e: Exception) {
+            _walletState.value = WalletState.Error(e.message ?: "Failed to load wallet")
         }
     }
 
