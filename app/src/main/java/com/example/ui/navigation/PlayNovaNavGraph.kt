@@ -30,7 +30,13 @@ fun PlayNovaNavGraph() {
             )
         }
         composable("dashboard") {
-            MainDashboardScreen()
+            MainDashboardScreen(
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

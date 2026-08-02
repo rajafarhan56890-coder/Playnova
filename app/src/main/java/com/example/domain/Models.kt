@@ -61,3 +61,11 @@ data class WithdrawalRequest(
     val status: String = "pending", // pending, approved, rejected
     val timestamp: Date = Date()
 )
+
+data class Referral(
+    val id: String = "",
+    val referrerId: String = "",
+    val referredId: String = "",
+    val timestamp: Date = Date(),
+    val bonusAwarded: Boolean = false
+)

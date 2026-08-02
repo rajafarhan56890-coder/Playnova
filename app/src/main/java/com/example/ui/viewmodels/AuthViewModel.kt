@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.domain.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
+import com.example.domain.Transaction
+import com.example.domain.Referral
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -66,8 +69,8 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-
-    fun signUp(email: String, pass: String) {
+    
+    fun signUp(email: String, pass: String, referralCode: String? = null) {
         if (auth == null) {
             checkCurrentUser() // mock success
             return
@@ -75,18 +78,69 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {
+                var referrerId: String? = null
+                var signupBonus: Long = 0L
+
+                if (!referralCode.isNullOrEmpty()) {
+                    val query = db?.collection("users")?.whereEqualTo("referralCode", referralCode)?.limit(1)?.get()?.await()
+                    if (query != null && !query.isEmpty) {
+                        referrerId = query.documents[0].id
+                        signupBonus = 200L // New user gets 200 Nova bonus
+                    }
+                }
+
                 val result = auth.createUserWithEmailAndPassword(email, pass).await()
                 val uid = result.user!!.uid
                 val newUser = UserProfile(
                     uid = uid,
                     email = email,
                     username = email.substringBefore("@"),
-                    balance = 0, // No welcome bonus
+                    balance = signupBonus, // Welcome bonus if referred
                     level = 1,
                     rank = "Bronze",
                     referralCode = generateReferralCode()
                 )
-                db?.collection("users")?.document(uid)?.set(newUser)?.await()
+
+                db?.runBatch { batch ->
+                    val userRef = db.collection("users").document(uid)
+                    batch.set(userRef, newUser)
+                    
+                    if (signupBonus > 0L) {
+                        val transactionRef = db.collection("users").document(uid).collection("transactions").document()
+                        batch.set(transactionRef, Transaction(
+                            id = transactionRef.id,
+                            title = "Sign Up Bonus",
+                            amount = signupBonus,
+                            isPositive = true,
+                            type = "reward",
+                            status = "completed"
+                        ))
+                    }
+
+                    if (referrerId != null) {
+                        val referrerRef = db.collection("users").document(referrerId)
+                        batch.update(referrerRef, "balance", FieldValue.increment(500L))
+
+                        val referrerTxRef = db.collection("users").document(referrerId).collection("transactions").document()
+                        batch.set(referrerTxRef, Transaction(
+                            id = referrerTxRef.id,
+                            title = "Referral Bonus",
+                            amount = 500L,
+                            isPositive = true,
+                            type = "referral",
+                            status = "completed"
+                        ))
+
+                        val referralDocRef = db.collection("referrals").document()
+                        batch.set(referralDocRef, Referral(
+                            id = referralDocRef.id,
+                            referrerId = referrerId,
+                            referredId = uid,
+                            bonusAwarded = true
+                        ))
+                    }
+                }?.await()
+                
                 _authState.value = AuthState.Success(newUser)
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Sign up failed")
@@ -115,6 +169,23 @@ class AuthViewModel : ViewModel() {
             }
         } catch (e: Exception) {
             _authState.value = AuthState.Error(e.message ?: "Failed to fetch profile")
+        }
+    }
+
+    fun updateProfile(username: String, profileImageUrl: String?) {
+        val uid = auth?.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                val updates = mutableMapOf<String, Any>(
+                    "username" to username
+                )
+                if (profileImageUrl != null) {
+                    updates["profileImageUrl"] = profileImageUrl
+                }
+                db?.collection("users")?.document(uid)?.update(updates)?.await()
+            } catch (e: Exception) {
+                // Handle error if needed
+            }
         }
     }
 

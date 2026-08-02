@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,7 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 
 @Composable
-fun MainDashboardScreen() {
+fun MainDashboardScreen(onLogout: () -> Unit = {}) {
     val bottomNavController = rememberNavController()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -61,6 +62,12 @@ fun MainDashboardScreen() {
                         label = { Text("Wallet") }
                     )
                     NavigationBarItem(
+                        selected = currentRoute == "leaderboard",
+                        onClick = { navigateTo("leaderboard") },
+                        icon = { Icon(Icons.Default.Leaderboard, contentDescription = "Leaderboard") },
+                        label = { Text("Rank") }
+                    )
+                    NavigationBarItem(
                         selected = currentRoute == "profile",
                         onClick = { navigateTo("profile") },
                         icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
@@ -80,7 +87,8 @@ fun MainDashboardScreen() {
             }
             composable("games") { GamesScreen() }
             composable("wallet") { WalletScreen() }
-            composable("profile") { ProfileScreen() }
+            composable("leaderboard") { LeaderboardScreen() }
+            composable("profile") { ProfileScreen(onLogout = onLogout) }
             composable("notifications") { 
                 NotificationsScreen(onBackClick = { bottomNavController.popBackStack() }) 
             }

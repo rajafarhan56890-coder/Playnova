@@ -34,6 +34,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Button
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,10 +56,12 @@ import com.example.ui.viewmodels.AuthViewModel
 @Composable
 fun ProfileScreen(
     authViewModel: AuthViewModel = viewModel(),
-    onNavigateToAdminGames: () -> Unit = {}
+    onNavigateToAdminGames: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = (authState as? AuthState.Success)?.user
+    var showEditProfileDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -68,7 +78,16 @@ fun ProfileScreen(
                 .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Person, contentDescription = "Profile Picture", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(48.dp))
+            if (!user?.profileImageUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = user?.profileImageUrl,
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(Icons.Default.Person, contentDescription = "Profile Picture", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(48.dp))
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -175,7 +194,11 @@ fun ProfileScreen(
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            SettingsItem(icon = Icons.Default.Person, title = "Edit Profile")
+            SettingsItem(
+                icon = Icons.Default.Person,
+                title = "Edit Profile",
+                onClick = { showEditProfileDialog = true }
+            )
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
             SettingsItem(icon = Icons.Default.History, title = "Login History")
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
@@ -193,7 +216,10 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         TextButton(
-            onClick = { authViewModel.logout() },
+            onClick = { 
+                authViewModel.logout() 
+                onLogout()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
@@ -203,6 +229,46 @@ fun ProfileScreen(
             Text("Log Out", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.height(24.dp))
+
+        if (showEditProfileDialog) {
+            var editUsername by remember { mutableStateOf(user?.username ?: "") }
+            var editImageUrl by remember { mutableStateOf(user?.profileImageUrl ?: "") }
+
+            AlertDialog(
+                onDismissRequest = { showEditProfileDialog = false },
+                title = { Text("Edit Profile") },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = editUsername,
+                            onValueChange = { editUsername = it },
+                            label = { Text("Username") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = editImageUrl,
+                            onValueChange = { editImageUrl = it },
+                            label = { Text("Profile Image URL (Optional)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        authViewModel.updateProfile(editUsername, editImageUrl.takeIf { it.isNotBlank() })
+                        showEditProfileDialog = false
+                    }) {
+                        Text("Save")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditProfileDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
 }
 

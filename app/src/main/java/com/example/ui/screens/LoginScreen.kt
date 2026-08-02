@@ -44,6 +44,7 @@ import com.example.ui.viewmodels.AuthViewModel
 fun LoginScreen(onLoginSuccess: () -> Unit, authViewModel: AuthViewModel = viewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var referralCode by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
 
     val authState by authViewModel.authState.collectAsState()
@@ -114,12 +115,26 @@ fun LoginScreen(onLoginSuccess: () -> Unit, authViewModel: AuthViewModel = viewM
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true
         )
+        
+        AnimatedVisibility(visible = isSignUp) {
+            Column {
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = referralCode,
+                    onValueChange = { referralCode = it },
+                    label = { Text("Referral Code (Optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        }
+        
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
                 if (isSignUp) {
-                    authViewModel.signUp(email, password)
+                    authViewModel.signUp(email, password, referralCode)
                 } else {
                     authViewModel.login(email, password)
                 }

@@ -34,6 +34,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.scale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -111,7 +118,7 @@ fun WalletScreen(walletViewModel: WalletViewModel = viewModel()) {
             
             when (val state = walletState) {
                 is WalletState.Loading -> {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
@@ -122,16 +129,16 @@ fun WalletScreen(walletViewModel: WalletViewModel = viewModel()) {
                     WalletBalanceCard(state.balance, state.config) {
                         showWithdrawDialog = true
                     }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Recent Transactions",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Recent Transactions",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Spacer(modifier = Modifier.height(16.dp))
         }
 
         if (walletState is WalletState.Success) {
@@ -165,6 +172,26 @@ fun WalletBalanceCard(balance: Long, config: AdminConfig, onWithdrawClick: () ->
     val usdValue = String.format(Locale.US, "%.2f", balance * config.conversionRateUSD)
     val pkrValue = String.format(Locale.US, "%.2f", balance * config.conversionRatePKR)
 
+    var previousBalance by remember { mutableStateOf(balance) }
+    var scaleMultiplier by remember { mutableStateOf(1f) }
+
+    val scale by animateFloatAsState(
+        targetValue = scaleMultiplier,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    LaunchedEffect(balance) {
+        if (balance != previousBalance) {
+            scaleMultiplier = 1.3f
+            kotlinx.coroutines.delay(150)
+            scaleMultiplier = 1f
+            previousBalance = balance
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -178,14 +205,33 @@ fun WalletBalanceCard(balance: Long, config: AdminConfig, onWithdrawClick: () ->
                 Icons.Default.AccountBalanceWallet,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(48.dp).scale(scale)
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "$balance Nova",
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AnimatedContent(
+                    targetState = balance,
+                    transitionSpec = {
+                        if (targetState > initialState) {
+                            (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
+                        } else {
+                            (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
+                        }.using(SizeTransform(clip = false))
+                    },
+                    label = "balanceAnimation"
+                ) { targetBalance ->
+                    Text(
+                        text = "$targetBalance",
+                        style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Text(
+                    text = " Nova",
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "≈ $usdValue USD / $pkrValue PKR",

@@ -1,0 +1,1 @@
+sed -i 's/import androidx.compose.material.icons.filled.AccountBalanceWallet/import androidx.compose.material.icons.filled.AccountBalanceWallet\nimport androidx.compose.material.icons.filled.Leaderboard/g' app/src/main/java/com/example/ui/screens/MainDashboardScreen.kt
