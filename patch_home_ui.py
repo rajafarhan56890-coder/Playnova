@@ -1,4 +1,6 @@
-package com.example.ui.screens
+import os
+
+home_screen = """package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,7 +16,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,8 +71,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(padding)
-                .animateContentSize(),
+                .padding(padding),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
             item {
@@ -337,3 +337,8 @@ fun ActivityTile(title: String, amount: String) {
         Text(amount, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.secondary)
     }
 }
+"""
+
+with open('app/src/main/java/com/example/ui/screens/HomeScreen.kt', 'w') as f:
+    f.write(home_screen)
+

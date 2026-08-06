@@ -2,12 +2,20 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val NovaPrimary = Color(0xFF9D4EDD) // Deep Purple
-val NovaSecondary = Color(0xFF00F0FF) // Cyan/Neon Blue
-val NovaTertiary = Color(0xFFFF0055) // Neon Pink
-val NovaBackground = Color(0xFF090514) // Very dark purple/black
-val NovaSurface = Color(0xFF1A1230)
-val NovaOnPrimary = Color(0xFFFFFFFF)
-val NovaOnBackground = Color(0xFFE2DDF8)
-val NovaOnSurface = Color(0xFFE2DDF8)
-val NovaError = Color(0xFFFF3333)
+val BrandPrimary = Color(0xFF6366F1) // Indigo 500
+val BrandSecondary = Color(0xFF10B981) // Emerald 500
+val BrandTertiary = Color(0xFFF59E0B) // Amber 500
+
+val LightBackground = Color(0xFFF9FAFB) // Gray 50
+val LightSurface = Color(0xFFFFFFFF) // White
+val LightSurfaceVariant = Color(0xFFF3F4F6) // Gray 100
+val LightOnBackground = Color(0xFF111827) // Gray 900
+val LightOnSurfaceVariant = Color(0xFF4B5563) // Gray 600
+
+val DarkBackground = Color(0xFF111827) // Gray 900
+val DarkSurface = Color(0xFF1F2937) // Gray 800
+val DarkSurfaceVariant = Color(0xFF374151) // Gray 700
+val DarkOnBackground = Color(0xFFF9FAFB) // Gray 50
+val DarkOnSurfaceVariant = Color(0xFF9CA3AF) // Gray 400
+
+val GoldAccent = Color(0xFFF59E0B)

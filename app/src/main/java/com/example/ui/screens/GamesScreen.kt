@@ -1,261 +1,120 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.domain.Game
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ui.viewmodels.AuthViewModel
 
+data class Game(val id: String, val title: String, val description: String, val imageColors: List<Color>)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GamesScreen(authViewModel: AuthViewModel = viewModel(), onNavigateToGame: (String) -> Unit = {}) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("All Games", "Leaderboard")
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        containerColor = androidx.compose.ui.graphics.Color.Transparent
-    ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding)
-        ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Play & Earn",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.primary
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(title, fontWeight = FontWeight.Bold) }
-                )
-            }
-        }
-
-        if (selectedTab == 0) {
-            GamesListSection(onPlayGame = { game -> 
-                if (game.id in listOf("1", "2", "3", "4", "5")) {
-                    onNavigateToGame(game.id)
-                } else {
-                    authViewModel.addBalance(game.rewardPoints.toLong(), "Reward: ${game.title}")
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("You played ${game.title} and earned ${game.rewardPoints} Nova!")
-                    }
-                }
-            })
-        } else {
-            LeaderboardSection()
-        }
-    }
-    }
-}
-
-@Composable
-fun GamesListSection(onPlayGame: (Game) -> Unit) {
-    val categories = listOf("All", "Action", "Puzzle", "Ads", "Strategy", "Arcade")
-    var selectedCategory by remember { mutableIntStateOf(0) }
+fun GamesScreen(onNavigateToGame: (String) -> Unit) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
     
-    val mockGames = listOf(
-        Game("1", "Tap Tap Runner", "Tap as fast as you can in 10 seconds!", "Action", 0),
-        Game("2", "Memory Master", "Memorize the sequence of colors.", "Puzzle", 0),
-        Game("3", "Reaction Time", "Test your reaction time.", "Action", 0),
-        Game("4", "Color Match", "Does the color match the word?", "Puzzle", 0),
-        Game("5", "Flappy Nova", "Fly through the pipes!", "Arcade", 0),
-        Game("6", "Watch Video Ad", "Watch a short ad to earn Nova.", "Ads", 25),
-        Game("7", "Offerwall", "Complete simple offers.", "Ads", 150)
+    val games = listOf(
+        Game("1", "Tap Tap Runner", "Fast paced action", listOf(primaryColor, secondaryColor)),
+        Game("2", "Memory Master", "Train your brain", listOf(tertiaryColor, primaryColor)),
+        Game("3", "Reaction Time", "Quick reflexes", listOf(secondaryColor, tertiaryColor)),
+        Game("4", "Color Match", "Focus & Match", listOf(Color(0xFF00CEC9), Color(0xFF6C5CE7))),
+        Game("5", "Flappy Coin", "Avoid pipes", listOf(Color(0xFFFFC312), Color(0xFFFD79A8)))
     )
 
-    val currentCategory = categories[selectedCategory]
-    val filteredGames = mockGames.filter { it.category == currentCategory || currentCategory == "All" }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(categories.size) { index ->
-                    Button(
-                        onClick = { selectedCategory = index },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedCategory == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (selectedCategory == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text(categories[index])
-                    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Arcade", style = MaterialTheme.typography.titleLarge) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(games) { game ->
+                    GameGridCard(game = game, onClick = { onNavigateToGame(game.id) })
                 }
             }
         }
-        
-        items(filteredGames.size) { index ->
-            val game = filteredGames[index]
-            GameCardDetailed(game, onPlayGame)
-        }
     }
 }
+
 @Composable
-fun GameCardDetailed(game: Game, onPlayClick: (Game) -> Unit) {
+fun GameGridCard(game: Game, onClick: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.85f)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        modifier = Modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .background(Brush.verticalGradient(colors = game.imageColors)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = Color.White
+                )
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(game.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(game.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("+${game.rewardPoints} Nova", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.tertiary)
-                }
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = { onPlayClick(game) },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(if (game.category == "Ads") "Watch" else "Play")
-            }
-        }
-    }
-}
-
-@Composable
-fun LeaderboardSection() {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Current Season ends in 3 days", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        items(10) { index ->
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (index == 0) MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(12.dp)
             ) {
                 Text(
-                    text = "#${index + 1}",
+                    text = game.title,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (index < 3) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.width(40.dp)
-                )
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("${(index + 1)}", color = MaterialTheme.colorScheme.onPrimary)
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = "Player_${100 - index}",
-                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                    maxLines = 1
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFC312),
+                        modifier = Modifier.size(14.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${10000 - (index * 500)}",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.secondary
+                        text = "Play to earn",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }

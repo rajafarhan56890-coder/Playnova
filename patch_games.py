@@ -1,224 +1,129 @@
-with open('app/src/main/java/com/example/ui/screens/GamesScreen.kt', 'r') as f:
-    content = f.read()
+import os
 
-imports_to_add = """
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ui.viewmodels.AuthViewModel
-"""
+games_code = """package com.example.ui.screens
 
-content = content.replace("import com.example.domain.Game", "import com.example.domain.Game" + imports_to_add)
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 
-old_games_screen = """@Composable
-fun GamesScreen() {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("All Games", "Leaderboard")
+data class Game(val id: String, val title: String, val description: String, val imageColors: List<Color>)
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Play & Earn",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        TabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.primary
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(title, fontWeight = FontWeight.Bold) }
-                )
-            }
-        }
-        
-        if (selectedTab == 0) {
-            GamesListSection()
-        } else {
-            LeaderboardSection()
-        }
-    }
-}"""
-
-new_games_screen = """@Composable
-fun GamesScreen(authViewModel: AuthViewModel = viewModel()) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("All Games", "Leaderboard")
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GamesScreen(onNavigateToGame: (String) -> Unit) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    
+    val games = listOf(
+        Game("1", "Tap Tap Runner", "Fast paced action", listOf(primaryColor, secondaryColor)),
+        Game("2", "Memory Master", "Train your brain", listOf(tertiaryColor, primaryColor)),
+        Game("3", "Reaction Time", "Quick reflexes", listOf(secondaryColor, tertiaryColor)),
+        Game("4", "Color Match", "Focus & Match", listOf(Color(0xFF00CEC9), Color(0xFF6C5CE7))),
+        Game("5", "Flappy Coin", "Avoid pipes", listOf(Color(0xFFFFC312), Color(0xFFFD79A8)))
+    )
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        containerColor = androidx.compose.ui.graphics.Color.Transparent
+        topBar = {
+            TopAppBar(
+                title = { Text("Arcade", style = MaterialTheme.typography.titleLarge) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Play & Earn",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.background,
-                contentColor = MaterialTheme.colorScheme.primary
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title, fontWeight = FontWeight.Bold) }
+                items(games) { game ->
+                    GameGridCard(game = game, onClick = { onNavigateToGame(game.id) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GameGridCard(game: Game, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.85f)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .background(Brush.verticalGradient(colors = game.imageColors)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = Color.White
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = game.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFC312),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Play to earn",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
-            
-            if (selectedTab == 0) {
-                GamesListSection(onPlayGame = { game -> 
-                    authViewModel.addBalance(game.rewardPoints.toLong(), "Reward: ${game.title}")
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("You played ${game.title} and earned ${game.rewardPoints} Nova!")
-                    }
-                })
-            } else {
-                LeaderboardSection()
-            }
         }
     }
-}"""
-
-content = content.replace(old_games_screen, new_games_screen)
-
-old_games_list = """@Composable
-fun GamesListSection() {
-    val categories = listOf("Action", "Puzzle", "Strategy", "Arcade")
-    var selectedCategory by remember { mutableIntStateOf(0) }
-    
-    val mockGames = listOf(
-        Game("1", "Galaxy Shooter", "Defend the galaxy from invaders.", "Arcade", 50),
-        Game("2", "Block Puzzle", "Clear lines by placing blocks.", "Puzzle", 30),
-        Game("3", "Tower Defense", "Build towers to stop enemies.", "Strategy", 100),
-        Game("4", "Ninja Dash", "Run and slash your way to victory.", "Action", 75),
-        Game("5", "Space Miner", "Mine asteroids for precious gems.", "Arcade", 40)
-    )
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(categories.size) { index ->
-                    Button(
-                        onClick = { selectedCategory = index },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedCategory == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (selectedCategory == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text(categories[index])
-                    }
-                }
-            }
-        }
-        
-        items(mockGames.size) { index ->
-            val game = mockGames[index]
-            GameCardDetailed(game)
-        }
-    }
-}"""
-
-new_games_list = """@Composable
-fun GamesListSection(onPlayGame: (Game) -> Unit) {
-    val categories = listOf("Action", "Puzzle", "Ads", "Strategy", "Arcade")
-    var selectedCategory by remember { mutableIntStateOf(0) }
-    
-    val mockGames = listOf(
-        Game("1", "Galaxy Shooter", "Defend the galaxy from invaders.", "Arcade", 50),
-        Game("2", "Block Puzzle", "Clear lines by placing blocks.", "Puzzle", 30),
-        Game("3", "Tower Defense", "Build towers to stop enemies.", "Strategy", 100),
-        Game("4", "Ninja Dash", "Run and slash your way to victory.", "Action", 75),
-        Game("5", "Space Miner", "Mine asteroids for precious gems.", "Arcade", 40),
-        Game("6", "Watch Video Ad", "Watch a short ad to earn Nova.", "Ads", 25),
-        Game("7", "Reward Ad 2", "Bonus reward for watching an ad.", "Ads", 50),
-        Game("8", "Offerwall Ad", "Complete simple offers.", "Ads", 150)
-    )
-
-    val currentCategory = categories[selectedCategory]
-    val filteredGames = mockGames.filter { it.category == currentCategory || currentCategory == "All" } // We don't have "All", just filtering exact match or just show all if we want. Actually let's just filter.
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(categories.size) { index ->
-                    Button(
-                        onClick = { selectedCategory = index },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedCategory == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (selectedCategory == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text(categories[index])
-                    }
-                }
-            }
-        }
-        
-        items(filteredGames.size) { index ->
-            val game = filteredGames[index]
-            GameCardDetailed(game, onPlayGame)
-        }
-    }
-}"""
-
-content = content.replace(old_games_list, new_games_list)
-
-old_card = """@Composable
-fun GameCardDetailed(game: Game) {"""
-
-new_card = """@Composable
-fun GameCardDetailed(game: Game, onPlayClick: (Game) -> Unit) {"""
-content = content.replace(old_card, new_card)
-
-old_play_click = """Button(
-                onClick = { /* Play game */ },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Play")
-            }"""
-
-new_play_click = """Button(
-                onClick = { onPlayClick(game) },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(if (game.category == "Ads") "Watch" else "Play")
-            }"""
-content = content.replace(old_play_click, new_play_click)
-
+}
+"""
 with open('app/src/main/java/com/example/ui/screens/GamesScreen.kt', 'w') as f:
-    f.write(content)
+    f.write(games_code)
 

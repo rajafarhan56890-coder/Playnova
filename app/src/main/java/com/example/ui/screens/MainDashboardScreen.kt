@@ -11,7 +11,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -36,7 +42,11 @@ fun MainDashboardScreen(onLogout: () -> Unit = {}, authViewModel: AuthViewModel 
     Scaffold(
         bottomBar = {
             if (currentRoute != "notifications") {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp,
+                    windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+                ) {
                     val navigateTo = { route: String ->
                         if (currentRoute != route) {
                             bottomNavController.navigate(route) {
@@ -86,12 +96,27 @@ fun MainDashboardScreen(onLogout: () -> Unit = {}, authViewModel: AuthViewModel 
         NavHost(
             navController = bottomNavController,
             startDestination = "home",
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            enterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally(animationSpec = tween(300)) { 300 } },
+            exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(animationSpec = tween(300)) { -300 } },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally(animationSpec = tween(300)) { -300 } },
+            popExitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(animationSpec = tween(300)) { 300 } }
         ) {
             composable("home") { 
                 HomeScreen(onNavigateToNotifications = { bottomNavController.navigate("notifications") }) 
             }
-            composable("games") { GamesScreen(onNavigateToGame = { gameId -> bottomNavController.navigate("play_game/$gameId") }) }
+            composable("games") { GamesScreen(onNavigateToGame = { gameId -> bottomNavController.navigate("game_details/$gameId") }) }
+                        composable(
+                route = "game_details/{gameId}",
+                arguments = listOf(navArgument("gameId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val gameId = backStackEntry.arguments?.getString("gameId") ?: "1"
+                GameDetailsScreen(
+                    gameId = gameId,
+                    onBack = { bottomNavController.popBackStack() },
+                    onPlay = { bottomNavController.navigate("play_game/$gameId") }
+                )
+            }
             composable(
                 route = "play_game/{gameId}",
                 arguments = listOf(navArgument("gameId") { type = NavType.StringType })

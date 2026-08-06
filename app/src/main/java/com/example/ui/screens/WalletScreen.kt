@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -27,6 +28,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -192,19 +194,28 @@ fun WalletBalanceCard(balance: Long, config: AdminConfig, onWithdrawClick: () ->
         }
     }
 
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        modifier = Modifier.fillMaxWidth()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(32.dp))
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.secondary
+                    )
+                )
+            )
+            .padding(24.dp)
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
                 Icons.Default.AccountBalanceWallet,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f),
                 modifier = Modifier.size(48.dp).scale(scale)
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -223,35 +234,36 @@ fun WalletBalanceCard(balance: Long, config: AdminConfig, onWithdrawClick: () ->
                     Text(
                         text = "$targetBalance",
                         style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = androidx.compose.ui.graphics.Color.White
                     )
                 }
                 Text(
                     text = " Nova",
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = androidx.compose.ui.graphics.Color.White
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "≈ $usdValue USD / $pkrValue PKR",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
                     onClick = onWithdrawClick,
                     modifier = Modifier.weight(1f).height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary)
+                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.White, contentColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Withdraw")
+                    Text("Withdraw", fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = { /* Handle Redeem items */ },
-                    modifier = Modifier.weight(1f).height(50.dp)
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.2f), contentColor = androidx.compose.ui.graphics.Color.White)
                 ) {
-                    Text("Redeem")
+                    Text("Redeem", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -293,7 +305,7 @@ fun WithdrawDialog(onDismiss: () -> Unit, onSubmit: (Long, String, String) -> Un
                         label = { Text("Payment Method") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        modifier = Modifier.menuAnchor()
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -343,8 +355,8 @@ fun TransactionItemDetailed(title: String, amount: String, isPositive: Boolean, 
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -352,38 +364,38 @@ fun TransactionItemDetailed(title: String, amount: String, isPositive: Boolean, 
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .size(48.dp)
+                    .clip(CircleShape)
                     .background(
-                        if (isPositive) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
-                        else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
+                        if (isPositive) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                        else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isPositive) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
                     contentDescription = null,
-                    tint = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.tertiary
+                    tint = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "${formatter.format(date)} • ${status.capitalize()}",
+                    text = "${formatter.format(date)} • ${status.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
         Text(
             text = amount,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.tertiary
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+            color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
         )
     }
 }

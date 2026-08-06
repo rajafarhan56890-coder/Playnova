@@ -1,4 +1,6 @@
-package com.example.ui.screens
+import os
+
+content = """package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -6,7 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +29,7 @@ fun MiniGameScreen(gameId: String, onBack: () -> Unit, onReward: (Long) -> Unit)
                 title = { Text(getGameName(gameId)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, "Back")
                     }
                 }
             )
@@ -460,3 +462,6 @@ fun FlappyBirdGame(onReward: (Int) -> Unit) {
         }
     }
 }
+"""
+with open('app/src/main/java/com/example/ui/screens/MiniGames.kt', 'w') as f:
+    f.write(content)
