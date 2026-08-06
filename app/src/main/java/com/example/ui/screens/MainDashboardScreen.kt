@@ -19,10 +19,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+
 import androidx.navigation.NavGraph.Companion.findStartDestination
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ui.viewmodels.AuthViewModel
+
 @Composable
-fun MainDashboardScreen(onLogout: () -> Unit = {}) {
+fun MainDashboardScreen(onLogout: () -> Unit = {}, authViewModel: AuthViewModel = viewModel()) {
     val bottomNavController = rememberNavController()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -85,7 +91,20 @@ fun MainDashboardScreen(onLogout: () -> Unit = {}) {
             composable("home") { 
                 HomeScreen(onNavigateToNotifications = { bottomNavController.navigate("notifications") }) 
             }
-            composable("games") { GamesScreen() }
+            composable("games") { GamesScreen(onNavigateToGame = { gameId -> bottomNavController.navigate("play_game/$gameId") }) }
+            composable(
+                route = "play_game/{gameId}",
+                arguments = listOf(navArgument("gameId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val gameId = backStackEntry.arguments?.getString("gameId") ?: "1"
+                MiniGameScreen(
+                    gameId = gameId,
+                    onBack = { bottomNavController.popBackStack() },
+                    onReward = { amount ->
+                        authViewModel.addBalance(amount, "Game Reward")
+                    }
+                )
+            }
             composable("wallet") { WalletScreen() }
             composable("leaderboard") { LeaderboardScreen() }
             composable("profile") { ProfileScreen(onLogout = onLogout) }
