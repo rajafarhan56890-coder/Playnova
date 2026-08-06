@@ -70,7 +70,7 @@ class AuthViewModel : ViewModel() {
         }
     }
     
-    fun signUp(email: String, pass: String, referralCode: String? = null) {
+    fun signUp(email: String, pass: String, username: String, referralCode: String? = null) {
         if (auth == null) {
             checkCurrentUser() // mock success
             return
@@ -94,7 +94,7 @@ class AuthViewModel : ViewModel() {
                 val newUser = UserProfile(
                     uid = uid,
                     email = email,
-                    username = email.substringBefore("@"),
+                    username = username,
                     balance = signupBonus, // Welcome bonus if referred
                     level = 1,
                     rank = "Bronze",
@@ -192,4 +192,34 @@ class AuthViewModel : ViewModel() {
     private fun generateReferralCode(): String {
         return "NOVA-" + UUID.randomUUID().toString().substring(0, 5).uppercase()
     }
+    fun addBalance(amount: Long, title: String) {
+        val uid = auth?.currentUser?.uid
+        if (uid == null) {
+            val current = _authState.value
+            if (current is AuthState.Success) {
+                _authState.value = AuthState.Success(current.user.copy(balance = current.user.balance + amount))
+            }
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                db?.runBatch { batch ->
+                    val userRef = db.collection("users").document(uid)
+                    batch.update(userRef, "balance", FieldValue.increment(amount))
+                    val txRef = db.collection("users").document(uid).collection("transactions").document()
+                    batch.set(txRef, Transaction(
+                        id = txRef.id,
+                        title = title,
+                        amount = amount,
+                        isPositive = true,
+                        type = "reward",
+                        status = "completed"
+                    ))
+                }?.await()
+            } catch(e: Exception) {
+            }
+        }
+    }
+
 }

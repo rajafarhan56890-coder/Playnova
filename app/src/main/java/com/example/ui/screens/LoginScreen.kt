@@ -20,6 +20,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.VisualTransformation
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,6 +50,11 @@ import com.example.ui.viewmodels.AuthViewModel
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit, authViewModel: AuthViewModel = viewModel()) {
     var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    
     var password by remember { mutableStateOf("") }
     var referralCode by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
@@ -134,7 +146,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, authViewModel: AuthViewModel = viewM
         Button(
             onClick = {
                 if (isSignUp) {
-                    authViewModel.signUp(email, password, referralCode)
+                    if (password == confirmPassword) authViewModel.signUp(email, password, username, referralCode)
                 } else {
                     authViewModel.login(email, password)
                 }

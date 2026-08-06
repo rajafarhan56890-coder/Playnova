@@ -41,15 +41,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.domain.Game
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ui.viewmodels.AuthViewModel
+
 
 @Composable
-fun GamesScreen() {
+fun GamesScreen(authViewModel: AuthViewModel = viewModel()) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("All Games", "Leaderboard")
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = androidx.compose.ui.graphics.Color.Transparent
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "Play & Earn",
@@ -74,25 +88,37 @@ fun GamesScreen() {
         }
 
         if (selectedTab == 0) {
-            GamesListSection()
+            GamesListSection(onPlayGame = { game -> 
+                authViewModel.addBalance(game.rewardPoints.toLong(), "Reward: ${game.title}")
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("You played ${game.title} and earned ${game.rewardPoints} Nova!")
+                }
+            })
         } else {
             LeaderboardSection()
         }
     }
+    }
 }
 
 @Composable
-fun GamesListSection() {
-    val categories = listOf("Action", "Puzzle", "Strategy", "Arcade")
+fun GamesListSection(onPlayGame: (Game) -> Unit) {
+    val categories = listOf("All", "Action", "Puzzle", "Ads", "Strategy", "Arcade")
     var selectedCategory by remember { mutableIntStateOf(0) }
-
+    
     val mockGames = listOf(
         Game("1", "Galaxy Shooter", "Defend the galaxy from invaders.", "Arcade", 50),
         Game("2", "Block Puzzle", "Clear lines by placing blocks.", "Puzzle", 30),
         Game("3", "Tower Defense", "Build towers to stop enemies.", "Strategy", 100),
         Game("4", "Ninja Dash", "Run and slash your way to victory.", "Action", 75),
-        Game("5", "Space Miner", "Mine asteroids for precious gems.", "Arcade", 40)
+        Game("5", "Space Miner", "Mine asteroids for precious gems.", "Arcade", 40),
+        Game("6", "Watch Video Ad", "Watch a short ad to earn Nova.", "Ads", 25),
+        Game("7", "Reward Ad 2", "Bonus reward for watching an ad.", "Ads", 50),
+        Game("8", "Offerwall Ad", "Complete simple offers.", "Ads", 150)
     )
+
+    val currentCategory = categories[selectedCategory]
+    val filteredGames = mockGames.filter { it.category == currentCategory || currentCategory == "All" }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -115,16 +141,15 @@ fun GamesListSection() {
                 }
             }
         }
-
-        items(mockGames.size) { index ->
-            val game = mockGames[index]
-            GameCardDetailed(game)
+        
+        items(filteredGames.size) { index ->
+            val game = filteredGames[index]
+            GameCardDetailed(game, onPlayGame)
         }
     }
 }
-
 @Composable
-fun GameCardDetailed(game: Game) {
+fun GameCardDetailed(game: Game, onPlayClick: (Game) -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -157,10 +182,10 @@ fun GameCardDetailed(game: Game) {
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { /* Play game */ },
+                onClick = { onPlayClick(game) },
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Play")
+                Text(if (game.category == "Ads") "Watch" else "Play")
             }
         }
     }

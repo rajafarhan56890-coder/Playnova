@@ -1,0 +1,5 @@
+    }
+    
+    fun signUp(email: String, pass: String, referralCode: String? = null) {
+        if (auth == null) {
+            checkCurrentUser() // mock success

@@ -1,0 +1,2 @@
+sed -i 's/var email by remember/var email by remember { mutableStateOf("") }\n    var username by remember { mutableStateOf("") }\n    var confirmPassword by remember { mutableStateOf("") }\n    var passwordVisible by remember { mutableStateOf(false) }\n    var confirmPasswordVisible by remember { mutableStateOf(false) }\n    var dummy/g' app/src/main/java/com/example/ui/screens/LoginScreen.kt
+sed -i 's/var dummy.*//g' app/src/main/java/com/example/ui/screens/LoginScreen.kt
